@@ -1,0 +1,21 @@
+{
+  "files.associations": {
+    "*.sqlbook": "sql",
+    "*.ndjson": "jsonl",
+    "*.dbclient-js": "javascript",
+    "*.html": "html",
+    "*.tmpl": "html",
+    "*.go": "go",
+    "raylib.h": "c",
+    "dlfcn.h": "c",
+    "plug.h": "c",
+    "typeinfo": "c",
+    "time.h": "c",
+    "stdio.h": "c",
+    "hot_reload.h": "c",
+    "raymath.h": "c",
+    "assert.h": "c",
+    "stdlib.h": "c"
+  },
+  "C_Cpp.errorSquiggles": "disabled"
+}

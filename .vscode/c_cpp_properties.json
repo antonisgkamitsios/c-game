@@ -1,0 +1,37 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "/home/antonis/Projects/c-projects/raylib_test/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/x86_64-w64-mingw32-gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "windows-clang-x64",
+            "compilerPathInCppPropertiesJson": "/usr/bin/g++",
+            "mergeConfigurations": false,
+            "recursiveIncludes": {
+                "reduce": "default",
+                "priority": "afterSystemIncludes",
+                "order": "depthFirst"
+            },
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

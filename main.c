@@ -5,9 +5,6 @@
 #include "plug.h"
 #include "hot_reload.h"
 
-
-
-
 int main(void)
 {
 
@@ -25,10 +22,9 @@ int main(void)
 
     if (IsKeyPressed(KEY_F11))
     {
+      plug_clear();
       if (!reload_plug())
         return 1;
-
-      plug_clear();
 
       plug_init();
     }

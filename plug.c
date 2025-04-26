@@ -78,9 +78,9 @@ typedef struct
 
 typedef struct
 {
-  Player *player;
-  Bullets *bullets;
-  Enemy *enemy;
+  Player player;
+  Bullets bullets;
+  Enemy enemy;
   Sate state;
   int score;
 } Plug;
@@ -136,6 +136,7 @@ Direction get_direction(Vector2 vec)
 
 void plug_clear(void)
 {
+  free(p->bullets.data);
   free(p);
 }
 
@@ -150,55 +151,46 @@ void plug_init(void)
   float dt = GetFrameTime();
 
   // Player stuff
-  Player *player = NULL;
-  player = malloc(sizeof(*player));
-  assert(player != NULL && "Bro buy some RAM");
-  memset(player, 0, sizeof(*player));
+  Player player = {0};
 
-  player->pos.x = w / 2;
-  player->pos.y = h / 2;
-  player->rel_pos.x = player->pos.x / w;
-  player->rel_pos.y = player->pos.y / h;
-  player->w = 35;
-  player->h = 35;
-  player->speed = 400;
-  player->color = BLACK;
-  player->dir = BOTTOM;
+  player.pos.x = w / 2;
+  player.pos.y = h / 2;
+  player.rel_pos.x = player.pos.x / w;
+  player.rel_pos.y = player.pos.y / h;
+  player.w = 35;
+  player.h = 35;
+  player.speed = 400;
+  player.color = BLACK;
+  player.dir = BOTTOM;
 
-  player->fire_rate = 1.0f;
-  player->last_fired = 0;
-  player->fire_speed = 500;
-  player->bullet_w = 5;
-  player->bullet_h = 5;
-  player->fire_damage = 10;
+  player.fire_rate = 1.0f;
+  player.last_fired = 0;
+  player.fire_speed = 500;
+  player.bullet_w = 5;
+  player.bullet_h = 5;
+  player.fire_damage = 10;
 
   p->player = player;
 
   // Enemy stuff
-  Enemy *enemy = NULL;
-  enemy = malloc(sizeof(*enemy));
-  assert(enemy != NULL && "Bro buy some RAM");
-  memset(enemy, 0, sizeof(*enemy));
+  Enemy enemy = {0};
 
-  enemy->pos.x = 0.0f;
-  enemy->pos.y = h / 2;
-  enemy->rel_pos.x = enemy->pos.x / w;
-  enemy->rel_pos.y = enemy->pos.y / h;
-  enemy->w = 35;
-  enemy->h = 35;
-  enemy->speed = 100;
-  enemy->color = YELLOW;
-  enemy->dir = BOTTOM;
-  enemy->max_life = 30;
-  enemy->life = enemy->max_life;
+  enemy.pos.x = 0.0f;
+  enemy.pos.y = h / 2;
+  enemy.rel_pos.x = enemy.pos.x / w;
+  enemy.rel_pos.y = enemy.pos.y / h;
+  enemy.w = 35;
+  enemy.h = 35;
+  enemy.speed = 100;
+  enemy.color = YELLOW;
+  enemy.dir = BOTTOM;
+  enemy.max_life = 30;
+  enemy.life = enemy.max_life;
 
   p->enemy = enemy;
 
   // Bullet stuff
-  Bullets *bullets = NULL;
-  bullets = malloc(sizeof(*bullets));
-  assert(bullets != NULL && "Bro buy some RAM");
-  memset(bullets, 0, sizeof(*bullets));
+  Bullets bullets = {0};
 
   p->bullets = bullets;
 
@@ -228,7 +220,7 @@ void update_game()
   }
 
   // Update player stuff
-  Player *player = p->player;
+  Player *player = &p->player;
 
   bool moved = false;
   Vector2 v = {0, 0};
@@ -276,7 +268,7 @@ void update_game()
   }
 
   // Update enemy stuff
-  Enemy *enemy = p->enemy;
+  Enemy *enemy = &p->enemy;
 
   if (enemy->life > 0)
   {
@@ -287,7 +279,7 @@ void update_game()
   }
 
   // Update Bullet stuff
-  Bullets *bullets = p->bullets;
+  Bullets *bullets = &p->bullets;
   bool firing = false;
   Direction bullet_direction;
 
@@ -373,14 +365,14 @@ void draw_game()
   DrawText(TextFormat("SCORE: %i", p->score), 10, 40, 20, BLACK);
 
   // Draw player stuff
-  Player *player = p->player;
+  Player *player = &p->player;
   player->pos.x = player->rel_pos.x * w;
   player->pos.y = player->rel_pos.y * h;
   DrawCircleV(player->pos, player->w, player->color);
-  DrawCircleV(player->pos, 1, RED);
+  DrawCircleV(player->pos, 1, YELLOW);
 
   // Draw enemy stuff
-  Enemy *enemy = p->enemy;
+  Enemy *enemy = &p->enemy;
   enemy->pos.x = enemy->rel_pos.x * w;
   enemy->pos.y = enemy->rel_pos.y * h;
   if (enemy->life > 0)
@@ -391,10 +383,10 @@ void draw_game()
   }
 
   // Draw bullets stuff
-  Bullets *bullets = p->bullets;
-  for (size_t i = 0; i < bullets->length; i++)
+  Bullets bullets = p->bullets;
+  for (size_t i = 0; i < bullets.length; i++)
   {
-    Bullet *bullet = &bullets->data[i];
+    Bullet *bullet = &bullets.data[i];
     bullet->pos.x = bullet->rel_pos.x * w;
     bullet->pos.y = bullet->rel_pos.y * h;
     if (bullet->fire)

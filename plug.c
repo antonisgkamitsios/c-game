@@ -163,6 +163,26 @@ void spawn_enemy()
   printf("Enemies: %zu %zu\n", enemies->length, enemies->capacity);
 }
 
+void fire_bullet(Direction bullet_direction)
+{
+  Bullets *bullets = &p->bullets;
+  Player *player = &p->player;
+  Bullet bullet = {0};
+  bullet.speed = player->fire_speed;
+  bullet.w = player->bullet_w;
+  bullet.h = player->bullet_h;
+
+  bullet.dir = bullet_direction;
+  Vector2 move = get_vector(bullet.dir);
+
+  bullet.pos.x = player->pos.x + move.x * player->w;
+  bullet.pos.y = player->pos.y + move.y * player->h;
+  bullet.fire = true;
+  player->last_fired = 0;
+
+  da_append(bullets, bullet);
+}
+
 void plug_clear(void)
 {
   free(p->bullets.data);
@@ -334,20 +354,7 @@ void update_game()
 
   if (firing && can_fire)
   {
-    Bullet bullet = {0};
-    bullet.speed = player->fire_speed;
-    bullet.w = player->bullet_w;
-    bullet.h = player->bullet_h;
-
-    bullet.dir = bullet_direction;
-    Vector2 move = get_vector(bullet.dir);
-
-    bullet.pos.x = player->pos.x + move.x * player->w;
-    bullet.pos.y = player->pos.y + move.y * player->h;
-    bullet.fire = true;
-    player->last_fired = 0;
-
-    da_append(bullets, bullet);
+    fire_bullet(bullet_direction);
   }
 
   for (size_t i = 0; i < bullets->length; i++)
@@ -377,7 +384,13 @@ void update_game()
         {
           bullet->fire = false;
           enemy->life -= player->fire_damage;
-          p->score += 1;
+
+          // enemy died
+          if (enemy->life <= 0)
+          {
+
+            p->score += 1;
+          }
         }
       }
     }

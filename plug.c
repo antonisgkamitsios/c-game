@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include <math.h>
 
 #include <raylib.h>
 #include <raymath.h>
@@ -60,6 +59,13 @@ typedef struct
 
 typedef struct
 {
+  Enemy *data;
+  size_t length;
+  size_t capacity;
+} Enemies;
+
+typedef struct
+{
   int w;
   int h;
   Vector2 pos;
@@ -80,7 +86,7 @@ typedef struct
 {
   Player player;
   Bullets bullets;
-  Enemy enemy;
+  Enemies enemies;
   Sate state;
   int score;
 } Plug;
@@ -134,6 +140,29 @@ Direction get_direction(Vector2 vec)
     return RIGHT;
 }
 
+void spawn_enemy()
+{
+  int w = GetScreenWidth();
+  int h = GetScreenHeight();
+  Enemy enemy = {0};
+
+  enemy.pos.x = w / 2 - 40;
+  enemy.pos.y = h / 2;
+  enemy.rel_pos.x = enemy.pos.x / w;
+  enemy.rel_pos.y = enemy.pos.y / h;
+  enemy.w = 35;
+  enemy.h = 35;
+  enemy.speed = 100;
+  enemy.color = YELLOW;
+  enemy.dir = BOTTOM;
+  enemy.max_life = 30;
+  enemy.life = enemy.max_life;
+
+  Enemies *enemies = &p->enemies;
+  da_append(enemies, enemy);
+  printf("Enemies: %zu %zu\n", enemies->length, enemies->capacity);
+}
+
 void plug_clear(void)
 {
   free(p->bullets.data);
@@ -163,8 +192,8 @@ void plug_init(void)
   player.color = BLACK;
   player.dir = BOTTOM;
 
-  player.fire_rate = 1.0f;
-  player.last_fired = 0;
+  player.fire_rate = 0.5f;
+  player.last_fired = player.fire_rate;
   player.fire_speed = 500;
   player.bullet_w = 5;
   player.bullet_h = 5;
@@ -173,21 +202,9 @@ void plug_init(void)
   p->player = player;
 
   // Enemy stuff
-  Enemy enemy = {0};
+  Enemies enemies = {0};
 
-  enemy.pos.x = 0.0f;
-  enemy.pos.y = h / 2;
-  enemy.rel_pos.x = enemy.pos.x / w;
-  enemy.rel_pos.y = enemy.pos.y / h;
-  enemy.w = 35;
-  enemy.h = 35;
-  enemy.speed = 100;
-  enemy.color = YELLOW;
-  enemy.dir = BOTTOM;
-  enemy.max_life = 30;
-  enemy.life = enemy.max_life;
-
-  p->enemy = enemy;
+  p->enemies = enemies;
 
   // Bullet stuff
   Bullets bullets = {0};
@@ -245,6 +262,11 @@ void update_game()
     moved = true;
   }
 
+  if (IsKeyPressed(KEY_P))
+  {
+    spawn_enemy();
+  }
+
   if (moved)
   {
     Vector2 n_v = Vector2Normalize(v);
@@ -268,14 +290,17 @@ void update_game()
   }
 
   // Update enemy stuff
-  Enemy *enemy = &p->enemy;
-
-  if (enemy->life > 0)
+  Enemies *enemies = &p->enemies;
+  for (size_t i = 0; i < enemies->length; i++)
   {
-    Vector2 dir = Vector2Normalize(Vector2Subtract(player->pos, enemy->pos));
+    Enemy *enemy = &enemies->data[i];
+    if (enemy->life > 0)
+    {
+      Vector2 dir = Vector2Normalize(Vector2Subtract(player->pos, enemy->pos));
 
-    enemy->rel_pos.x = (enemy->pos.x + dir.x * enemy->speed * dt) / w;
-    enemy->rel_pos.y = (enemy->pos.y + dir.y * enemy->speed * dt) / h;
+      enemy->rel_pos.x = (enemy->pos.x + dir.x * enemy->speed * dt) / w;
+      enemy->rel_pos.y = (enemy->pos.y + dir.y * enemy->speed * dt) / h;
+    }
   }
 
   // Update Bullet stuff
@@ -343,13 +368,36 @@ void update_game()
         bullet->rel_pos.x = (bullet->pos.x + move.x * speed) / w;
         bullet->rel_pos.y = (bullet->pos.y + move.y * speed) / h;
       }
+
       // Detect collision
-      if (enemy->life > 0 && Vector2Distance(enemy->pos, bullet->pos) <= enemy->w + bullet->w)
+      for (size_t j = 0; j < enemies->length; j++)
       {
-        bullet->fire = false;
-        enemy->life -= player->fire_damage;
-        p->score += 1;
+        Enemy *enemy = &enemies->data[j];
+        if (enemy->life > 0 && Vector2Distance(enemy->pos, bullet->pos) <= enemy->w + bullet->w)
+        {
+          bullet->fire = false;
+          enemy->life -= player->fire_damage;
+          p->score += 1;
+        }
       }
+    }
+  }
+
+  for (size_t i = 0; i < bullets->length; i++)
+  {
+    if (!bullets->data[i].fire)
+    {
+      bullets->data[i] = bullets->data[--bullets->length];
+      i--;
+    }
+  }
+
+  for (size_t i = 0; i < enemies->length; i++)
+  {
+    if (enemies->data[i].life <= 0)
+    {
+      enemies->data[i] = enemies->data[--enemies->length];
+      i--;
     }
   }
 }
@@ -372,14 +420,18 @@ void draw_game()
   DrawCircleV(player->pos, 1, YELLOW);
 
   // Draw enemy stuff
-  Enemy *enemy = &p->enemy;
-  enemy->pos.x = enemy->rel_pos.x * w;
-  enemy->pos.y = enemy->rel_pos.y * h;
-  if (enemy->life > 0)
+  for (size_t i = 0; i < p->enemies.length; i++)
   {
-    DrawCircleV(enemy->pos, enemy->w, enemy->color);
-    float life_p = enemy->life / enemy->max_life;
-    DrawRectangle(enemy->pos.x - enemy->w / 2, enemy->pos.y - enemy->h - 15, enemy->w * life_p, 10, GREEN);
+    Enemy *enemy = &p->enemies.data[i];
+    enemy->pos.x = enemy->rel_pos.x * w;
+    enemy->pos.y = enemy->rel_pos.y * h;
+
+    if (enemy->life > 0)
+    {
+      DrawCircleV(enemy->pos, enemy->w, enemy->color);
+      float life_p = enemy->life / enemy->max_life;
+      DrawRectangle(enemy->pos.x - enemy->w / 2, enemy->pos.y - enemy->h - 15, enemy->w * life_p, 10, GREEN);
+    }
   }
 
   // Draw bullets stuff
